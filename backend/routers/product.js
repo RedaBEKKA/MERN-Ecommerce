@@ -2,7 +2,27 @@ const express = require('express');
 const { Category } = require('../models/category');
 const {Product}=require('../models/product')
 const router = express.Router()
-const mongoose = require('mongoose')
+const mongoose = require('mongoose');
+const multer = require("multer");
+
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        const isValid = FILE_TYPE_MAP[file.mimetype];
+        let uploadError = new Error('invalid image type');
+
+        if (isValid) {
+            uploadError = null;
+        }
+        cb(uploadError, 'public/uploads');
+    },
+    filename: function (req, file, cb) {
+        const fileName = file.originalname.split(' ').join('-');
+        const extension = FILE_TYPE_MAP[file.mimetype];
+        cb(null, `${fileName}-${Date.now()}.${extension}`);
+    }
+});
+  
+  const upload = multer({ storage: storage })
 
 router.get(`/`,async(req,res)=>{
        let filter = {}
@@ -29,17 +49,23 @@ router.get(`/:id`,async(req,res)=>{
 })
 
 
-router.post(`/`,async(req,res)=>{
+router.post(`/`,upload.single('images'),async(req,res)=>{
     const category = await Category.findById(req.body.category);
 
     if (!category) {
         return res.status(400).send('Invalide categorie')
     }
+    const file = req.file;
+    if (!file) return res.status(400).send('Pas dimages');
+
+    const fileName = file.filename;
+    const basePath = `${req.protocol}://${req.get('host')}/public/uploads/`;
+    console.log(basePath+"chemin")
     let produit = new Product({
         name:req.body.name,
         description:req.body.description,
         richDescription:req.body.richDescription,
-        image:req.body.image,
+        image:`${basePath}${fileName}`,
         brand:req.body.brand,
         price:req.body.price,
         category:req.body.category,
@@ -118,6 +144,7 @@ router.delete('/:id',(req,res)=>{
 
 
 router.get(`/get/count`,async(req,res)=>{
+    
     //le nombre de document qu'il ya dans ma collection
     const productCount = await Product.countDocuments((count)=>count)
     

@@ -14,7 +14,7 @@ const userSchema = mongoose.Schema({
         required:true
     },
     phone:{
-        type:Number,
+        type:String,
         required:true
     },
     street:{
@@ -43,11 +43,11 @@ const userSchema = mongoose.Schema({
     }
 })
 
-productSchema.virtual('id').get(function(){
+userSchema.virtual('id').get(function(){
     return this._id.toHexString()
 })
 
-productSchema.set('toJSON',{
+userSchema.set('toJSON',{
     virtuals:true
 })
 
